@@ -1,0 +1,45 @@
+# Offline test config: same app, but Workers AI and Vectorize are replaced by
+# deterministic fakes (test/mock-entry.ts) so the full flow runs with no account.
+name = "citeseek-mock"
+main = "mock-entry.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[kv_namespaces]]
+binding = "PAPERS_KV"
+id = "mock"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "citeseek-db-mock"
+database_id = "mock-d1"
+
+[durable_objects]
+bindings = [{ name = "CHAT_SESSION", class_name = "ChatSession" }]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ChatSession"]
+
+[[workflows]]
+name = "citeseek-ingestion-mock"
+binding = "INGESTION_WORKFLOW"
+class_name = "MockIngestionWorkflow"
+
+[assets]
+directory = "../static"
+binding = "ASSETS"
+
+# Daily cleanup at 04:23 UTC (src/maintenance.ts): expired trash for every user, old sessions,
+# email links and rate-limit records, and retries of passages Vectorize refused to delete.
+# Test-only: the end-to-end suite creates many accounts quickly, so rate limits are off here.
+[vars]
+RELAX_LIMITS = "1"
+
+[triggers]
+crons = ["23 4 * * *"]
+
+# Workers Logs: keeps console output (including structured error events) searchable in the
+# dashboard under Workers & Pages → citeseek → Logs. Free plan includes a daily allowance.
+[observability]
+enabled = true

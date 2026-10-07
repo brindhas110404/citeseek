@@ -1,0 +1,11 @@
+# Local settings for `npm run dev`. Copy this file to .dev.vars (which is git-ignored).
+# These are NOT used by the deployed app: add them there as secrets (see "Adding secrets" in the README).
+
+# Cloudflare Turnstile public test keys: always pass locally. Delete both lines to turn the bot check off.
+TURNSTILE_SITE_KEY=1x00000000000000000000AA
+TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
+
+# Optional: send real emails through Brevo (otherwise local dev confirms emails automatically
+# and prints anything it would have sent in the terminal).
+# BREVO_API_KEY=
+# EMAIL_FROM=you@gmail.com

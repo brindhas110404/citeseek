@@ -1,0 +1,28 @@
+{
+  "name": "citeseek",
+  "version": "2.0.0",
+  "description": "CiteSeek: ask questions about research papers and get answers with clickable, verifiable citations. Built on Cloudflare Workers AI, Vectorize, Workflows, Durable Objects and KV.",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "predeploy": "node scripts/deploy-check.mjs",
+    "deploy": "wrangler deploy",
+    "setup": "node scripts/setup.mjs",
+    "typecheck": "tsc --noEmit",
+    "create-vectorize": "wrangler vectorize create citeseek-embeddings --dimensions=768 --metric=cosine",
+    "create-kv": "wrangler kv namespace create PAPERS_KV",
+    "dev:mock": "wrangler dev -c test/wrangler.mock.toml --test-scheduled",
+    "atlas:build": "node scripts/build-atlas.mjs",
+    "reset-password": "node scripts/reset-password.mjs",
+    "test": "playwright test"
+  },
+  "dependencies": {
+    "hono": "^4.6.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241205.0",
+    "@playwright/test": "^1.56.0",
+    "typescript": "^5.7.0",
+    "wrangler": "^4.74.0"
+  }
+}

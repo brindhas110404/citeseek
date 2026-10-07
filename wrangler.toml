@@ -1,0 +1,61 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "citeseek"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Workers AI: Llama 3.3 (answers, summaries), Llama 3.1 8B (query rewriting),
+# BGE base (embeddings), BGE reranker
+[ai]
+binding = "AI"
+remote = true
+
+# Workers KV: full paper text (free plan, no card needed)
+# For `npm run deploy`, run `npm run create-kv` once and paste the id it prints below.
+[[kv_namespaces]]
+binding = "PAPERS_KV"
+id = "REPLACE_WITH_KV_ID"
+
+# D1 (SQLite): accounts, login sessions, paper details, conversation list.
+# `npm run setup` creates it and fills in the id; tables are created automatically.
+[[d1_databases]]
+binding = "DB"
+database_name = "citeseek-db"
+database_id = "REPLACE_WITH_D1_ID"
+
+# Vectorize: semantic search over chunks (one namespace per paper)
+[[vectorize]]
+binding = "VECTORIZE"
+index_name = "citeseek-embeddings"
+remote = true  # Vectorize has no local simulator; use the real index during `wrangler dev`
+
+# Durable Objects: per-session chat memory in SQLite
+[durable_objects]
+bindings = [
+  { name = "CHAT_SESSION", class_name = "ChatSession" }
+]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ChatSession"]
+
+# Workflows: durable ingestion pipeline
+[[workflows]]
+name = "citeseek-ingestion"
+binding = "INGESTION_WORKFLOW"
+class_name = "PaperIngestionWorkflow"
+
+# Static frontend
+[assets]
+directory = "./static"
+binding = "ASSETS"
+
+# Daily cleanup at 04:23 UTC (src/maintenance.ts): expired trash for every user, old sessions,
+# email links and rate-limit records, and retries of passages Vectorize refused to delete.
+[triggers]
+crons = ["23 4 * * *"]
+
+# Workers Logs: keeps console output (including structured error events) searchable in the
+# dashboard under Workers & Pages → citeseek → Logs. Free plan includes a daily allowance.
+[observability]
+enabled = true

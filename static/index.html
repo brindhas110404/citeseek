@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CiteSeek: answers from your papers, with receipts</title>
+  <meta name="description" content="Upload research papers, ask questions, and get answers where every claim links to the passage it came from." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232E5A43'/%3E%3Ccircle cx='14' cy='14' r='6.5' fill='none' stroke='%23F3EDE0' stroke-width='2.6'/%3E%3Cpath d='M19 19l6 6' stroke='%23D9A877' stroke-width='2.8' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+  <script src="/report.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <!-- ============ Library sidebar ============ -->
+    <aside class="sidebar" id="sidebar">
+      <button class="brand" id="homeBtn" title="Home">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+          <rect width="32" height="32" rx="8" fill="var(--forest)" />
+          <circle cx="14" cy="14" r="6.5" fill="none" stroke="var(--sand-100)" stroke-width="2.6" />
+          <path d="M19 19l6 6" stroke="var(--clay-light)" stroke-width="2.8" stroke-linecap="round" />
+        </svg>
+        <div>
+          <div class="brand-name">CiteSeek</div>
+          <div class="brand-tag">Answers from your papers, with receipts</div>
+        </div>
+      </button>
+
+      <section class="upload">
+        <label class="dropzone" id="dropZone">
+          <input type="file" id="fileInput" accept=".pdf,.txt,.md,.text" />
+          <svg viewBox="0 0 24 24" class="dz-icon" aria-hidden="true"><path d="M12 16V4m0 0l-4.5 4.5M12 4l4.5 4.5M4 15v3a2 2 0 002 2h12a2 2 0 002-2v-3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="dz-main" id="dzMain"><strong>Add a paper</strong>: drop or browse</span>
+          <span class="dz-sub" id="dzSub">PDF, TXT or Markdown</span>
+        </label>
+        <div class="upload-row" id="uploadRow" hidden>
+          <input type="text" class="title-input" id="paperTitle" placeholder="Title (blank = auto-detect)" />
+          <button class="btn btn-primary" id="uploadBtn">Index paper</button>
+        </div>
+      </section>
+
+      <section class="library">
+        <div class="section-head">
+          <span>Library</span>
+          <span class="count" id="paperCount"></span>
+        </div>
+        <button class="scope-all" id="scopeAll">
+          <span class="scope-dot"></span> Whole library
+        </button>
+        <div id="allChats" class="chat-list-wrap"></div>
+        <div id="papersList" class="papers"></div>
+      </section>
+
+      <nav class="side-nav" aria-label="Archive and deleted papers">
+        <button class="side-link" id="navArchive">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v3H4zM5.5 10v8.5h13V10M10 13.5h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>
+          <span>Archive</span><span class="count" id="archiveCount"></span>
+        </button>
+        <button class="side-link" id="navTrash">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2m-7 0l1 12h8l1-12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Recently deleted</span><span class="count" id="trashCount"></span>
+        </button>
+      </nav>
+
+      <footer class="sidebar-foot">
+        <span class="user-avatar" id="userAvatar"></span>
+        <span class="user-name" id="userName"></span>
+        <button class="icon-btn key-btn" id="keyBtn" title="Account" aria-label="Account">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/></svg>
+          <i class="key-dot" id="keyDot" hidden></i>
+        </button>
+        <button class="signout" id="signOutBtn">Sign out</button>
+      </footer>
+    </aside>
+
+    <!-- ============ Conversation ============ -->
+    <main class="main">
+      <header class="topbar">
+        <button class="icon-btn menu-btn" id="menuBtn" aria-label="Open library">
+          <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <div class="scope">
+          <span class="scope-label">Asking</span>
+          <span class="scope-value" id="scopeValue">Whole library</span>
+        </div>
+        <button class="btn btn-ghost" id="newChatBtn">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          New chat
+        </button>
+      </header>
+      <div class="verify-banner" id="verifyBanner" role="status" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7l8.5 6 8.5-6"/></svg>
+        <span class="vb-text">Confirm your email to turn on password resets. We sent a link to <strong id="vbEmail"></strong>.</span>
+        <span class="vb-actions">
+          <button type="button" class="vb-btn" id="vbResend">Resend</button>
+          <button type="button" class="vb-btn" id="vbChange">Change</button>
+          <button type="button" class="vb-x" id="vbClose" aria-label="Hide until next visit">×</button>
+        </span>
+      </div>
+
+      <!-- Archive / Recently deleted -->
+      <section class="shelf" id="shelf" hidden>
+        <div class="shelf-inner">
+          <div class="shelf-head">
+            <div>
+              <h1 class="shelf-title" id="shelfTitle"></h1>
+              <p class="shelf-desc" id="shelfDesc"></p>
+            </div>
+            <button class="btn btn-ghost danger" id="emptyTrashBtn" hidden>Empty Recently deleted</button>
+          </div>
+          <div class="shelf-list" id="shelfList"></div>
+        </div>
+      </section>
+
+      <!-- Home -->
+      <section class="home" id="home" hidden>
+        <div class="home-inner">
+          <section class="atlas" id="atlas" aria-label="Paper atlas"></section>
+
+          <div class="home-hero">
+            <h1>Ask your papers anything.<br /><em>Get answers with receipts.</em></h1>
+            <p>Every claim links to the exact passage it came from, so you can trust what you read.</p>
+            <form class="home-ask" id="homeAsk">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M15 15l5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <input id="homeAskInput" type="text" autocomplete="off" placeholder="Ask across your whole library…" />
+              <button class="btn btn-primary" type="submit">Ask</button>
+            </form>
+            <div class="suggestions home-suggest" id="homeSuggest"></div>
+          </div>
+
+          <div class="home-row">
+            <button class="home-drop" id="homeDrop">
+              <span class="home-drop-ball" aria-hidden="true">
+                <svg viewBox="0 0 56 56"><path d="M28 3l7 4 8-1 4 7 6 5-1 8 3 7-5 6-1 8-7 3-5 5-8-2-7 3-5-6-8-2-1-8-5-5 3-7-2-8 6-4 3-7 8 0z" fill="#fbf8f2" stroke="#b9a988" stroke-width="1.3" stroke-linejoin="round"/><path d="M11 20l9 6 7-9 8 7 10-4M9 33l10-2 6 8 9-6 11 4" fill="none" stroke="#c8b897" stroke-width="1.1" stroke-linecap="round"/><rect x="14" y="22" width="28" height="12" rx="3" fill="#2e5a43"/><text x="28" y="31" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" font-weight="600" fill="#fbf8f2">PDF</text></svg>
+              </span>
+              <span class="home-drop-t">Shoot a paper in</span>
+              <span class="home-drop-d">Drop a PDF anywhere on the page, or click to browse. Make the basket to index it.</span>
+            </button>
+            <div class="home-card home-recent" id="homeRecent"></div>
+          </div>
+
+          <section class="home-lib">
+            <div class="home-section-head"><span>Your library</span><span class="count" id="homeLibCount"></span></div>
+            <div class="home-papers" id="homePapers"></div>
+          </section>
+        </div>
+      </section>
+
+      <div class="thread" id="thread">
+        <div class="thread-inner" id="messages"></div>
+      </div>
+
+      <form class="composer" id="composer">
+        <div class="composer-box">
+          <textarea id="chatInput" rows="1" placeholder="Ask about your papers…"></textarea>
+          <button class="send" id="sendBtn" type="submit" aria-label="Send">
+            <svg viewBox="0 0 24 24"><path d="M5 12h13m0 0l-5-5m5 5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <div class="composer-hint">Every claim links to its source. Click a <span class="cite-demo">1</span> to verify it.</div>
+      </form>
+    </main>
+
+    <!-- ============ Evidence drawer ============ -->
+    <aside class="drawer" id="drawer" aria-hidden="true">
+      <div class="drawer-head">
+        <div>
+          <div class="drawer-kicker">Evidence</div>
+          <div class="drawer-title" id="drawerTitle"></div>
+        </div>
+        <button class="icon-btn" id="drawerClose" aria-label="Close">
+          <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="drawer-query" id="drawerQuery"></div>
+      <div class="drawer-body" id="drawerBody"></div>
+    </aside>
+    <div class="scrim" id="scrim"></div>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+
+  <!-- ============ Sign in / create account ============ -->
+  <div class="auth" id="auth" hidden>
+    <section class="auth-globe atlas" id="authGlobe" aria-label="Explore research papers"></section>
+    <main class="auth-main">
+      <form class="auth-card" id="authForm" novalidate>
+        <div class="auth-brand">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#2e5a43"/><circle cx="14" cy="14" r="6.5" fill="none" stroke="#f3ede0" stroke-width="2.6"/><path d="M19 19l6 6" stroke="#d9a877" stroke-width="2.8" stroke-linecap="round"/></svg>
+          <span>CiteSeek</span>
+        </div>
+        <p class="auth-pitch">Answers from your papers, <em>with receipts.</em> Explore the globe, then sign in to add papers and ask them anything.</p>
+        <div class="auth-tabs" role="tablist">
+          <button type="button" role="tab" data-auth-tab="login" aria-selected="true">Sign in</button>
+          <button type="button" role="tab" data-auth-tab="signup" aria-selected="false">Create account</button>
+        </div>
+        <h2 class="auth-title" id="authTitle">Welcome back</h2>
+        <p class="auth-sub" id="authSub">Sign in to your library.</p>
+        <label class="field" id="userField">
+          <span>Username</span>
+          <input id="authUser" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required minlength="3" maxlength="32" placeholder="Your username" />
+        </label>
+        <label class="field" id="emailField" hidden>
+          <span class="field-row"><span>Email</span><em class="field-opt">optional</em></span>
+          <input id="authEmail" name="email" type="email" autocomplete="email" spellcheck="false" maxlength="254" placeholder="you@example.com" />
+          <small class="field-hint">Only used to email you a reset link if you forget your password.</small>
+        </label>
+        <label class="field" id="keyField" hidden>
+          <span>Recovery key</span>
+          <input id="authKey" name="recovery-key" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="40" placeholder="XXXXX-XXXXX-XXXXX-XXXXX" />
+          <small class="field-hint">The key you saved when you created your account.</small>
+        </label>
+        <label class="field">
+          <span class="field-row"><span id="pwLabel">Password</span><button type="button" class="link-btn" id="forgotBtn">Forgot password?</button></span>
+          <span class="pw-wrap">
+            <input id="authPass" name="password" type="password" autocomplete="current-password" required placeholder="Your password" />
+            <button type="button" class="pw-toggle" id="pwToggle" aria-label="Show password">Show</button>
+          </span>
+          <span class="pw-meter" id="pwMeter" hidden aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+          <small class="field-hint" id="pwHint" hidden>Avoid common passwords and your username.</small>
+        </label>
+        <div class="turnstile-box" id="turnstileBox"></div>
+        <div class="auth-error" id="authError" role="alert" hidden></div>
+        <button class="btn btn-primary auth-submit" id="authSubmit" type="submit">Sign in</button>
+        <p class="auth-switch" id="authSwitch">New here? <button type="button" data-auth-tab="signup">Create an account</button></p>
+        <p class="auth-tech">Built on Cloudflare Workers AI · Vectorize · Workflows · Durable Objects · D1 · KV</p>
+      </form>
+    </main>
+  </div>
+  <!-- Forgot password: email a reset link, or switch to the recovery-key form -->
+  <div class="modal" id="forgotModal" hidden role="dialog" aria-modal="true" aria-labelledby="forgotTitle">
+    <div class="modal-card">
+      <button type="button" class="modal-x" data-close aria-label="Close">×</button>
+      <div class="key-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7l8.5 6 8.5-6"/></svg></div>
+      <form id="forgotForm" novalidate>
+        <h2 id="forgotTitle">Forgot your password?</h2>
+        <p class="modal-sub">Enter the email on your account and we'll send you a link to choose a new password.</p>
+        <label class="field">
+          <span>Email</span>
+          <input id="forgotEmail" type="email" autocomplete="email" spellcheck="false" placeholder="you@example.com" />
+        </label>
+        <div class="turnstile-box" id="forgotTurnstile"></div>
+        <div class="auth-error" id="forgotError" role="alert" hidden></div>
+        <button type="submit" class="btn btn-primary key-done" id="forgotSend">Send reset link</button>
+        <div class="or-rule"><span>or</span></div>
+        <button type="button" class="btn btn-ghost key-done" id="forgotUseKey">Use my recovery key instead</button>
+      </form>
+      <div id="forgotSent" hidden>
+        <h2>Check your email</h2>
+        <p class="modal-sub" id="forgotSentText"></p>
+        <div class="dev-note" id="forgotDev" hidden></div>
+        <button type="button" class="btn btn-primary key-done" data-close>Back to sign in</button>
+        <p class="modal-foot">No email? Check spam, or <button type="button" class="link-btn" id="forgotAgain">try again</button>.</p>
+        <p class="modal-foot">Reset links only go to emails that were confirmed. Never clicked the confirmation link? <button type="button" class="link-btn" id="forgotSentKey">Use your recovery key</button>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Account: email for reset links + recovery key -->
+  <div class="modal" id="acctModal" hidden role="dialog" aria-modal="true" aria-labelledby="acctTitle">
+    <div class="modal-card">
+      <button type="button" class="modal-x" data-close aria-label="Close">×</button>
+      <h2 id="acctTitle">Account</h2>
+      <p class="modal-sub">Ways back in if you forget your password, where you're signed in, and your data.</p>
+      <h3 class="acct-h">Password recovery</h3>
+      <section class="acct-row">
+        <div class="acct-head">
+          <div><strong>Email</strong><span class="acct-val" id="acctEmail"></span></div>
+          <span class="badge" id="acctEmailBadge"></span>
+        </div>
+        <div class="acct-actions" id="acctEmailActions">
+          <button type="button" class="btn btn-ghost" id="acctEmailEdit">Add email</button>
+          <button type="button" class="btn btn-ghost" id="acctEmailResend" hidden>Resend link</button>
+          <button type="button" class="btn btn-ghost danger" id="acctEmailRemove" hidden>Remove</button>
+        </div>
+        <form class="acct-form" id="acctEmailForm" hidden novalidate>
+          <label class="field" id="acctNewEmailField"><span>Email</span><input id="acctNewEmail" type="email" autocomplete="email" spellcheck="false" placeholder="you@example.com" /></label>
+          <label class="field"><span>Your password</span><input id="acctPass" type="password" autocomplete="current-password" placeholder="Confirm it's you" /></label>
+          <div class="auth-error" id="acctError" role="alert" hidden></div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" id="acctCancel">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="acctSave">Save</button>
+          </div>
+        </form>
+        <div class="dev-note" id="acctDev" hidden></div>
+      </section>
+      <section class="acct-row">
+        <div class="acct-head">
+          <div><strong>Recovery key</strong><span class="acct-val" id="acctKeyText"></span></div>
+          <span class="badge" id="acctKeyBadge"></span>
+        </div>
+        <div class="acct-actions"><button type="button" class="btn btn-ghost" id="acctKeyBtn">Create key</button></div>
+      </section>
+      <h3 class="acct-h">Signed-in devices</h3>
+      <section class="acct-row">
+        <ul class="device-list" id="deviceList"><li class="muted">Loading…</li></ul>
+        <div class="acct-actions"><button type="button" class="btn btn-ghost" id="signOutOthers" hidden>Sign out all other devices</button></div>
+      </section>
+      <h3 class="acct-h">Your data</h3>
+      <section class="acct-row">
+        <div class="acct-head"><div><strong>Download my data</strong><span class="acct-val">Your papers (with their text and briefs) and every conversation, as one file.</span></div></div>
+        <div class="acct-actions"><button type="button" class="btn btn-ghost" id="exportBtn">Download</button></div>
+      </section>
+      <section class="acct-row danger-zone">
+        <div class="acct-head"><div><strong>Delete account</strong><span class="acct-val">Erases your account, papers, conversations and email for good. This can't be undone.</span></div></div>
+        <div class="acct-actions" id="delAcctActions"><button type="button" class="btn btn-ghost danger" id="delAcctBtn">Delete my account</button></div>
+        <form class="acct-form" id="delAcctForm" hidden novalidate>
+          <label class="field"><span>Type your username to confirm</span><input id="delAcctName" autocomplete="off" autocapitalize="none" spellcheck="false" /></label>
+          <label class="field"><span>Your password</span><input id="delAcctPass" type="password" autocomplete="current-password" /></label>
+          <div class="auth-error" id="delAcctError" role="alert" hidden></div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" id="delAcctCancel">Cancel</button>
+            <button type="submit" class="btn btn-primary danger-fill" id="delAcctGo">Delete everything</button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </div>
+
+  <!-- Recovery key: shown once after sign-up / reset, or regenerated from the sidebar -->
+  <div class="modal" id="keyModal" hidden role="dialog" aria-modal="true" aria-labelledby="keyTitle">
+    <div class="modal-card">
+      <div class="key-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/></svg></div>
+      <h2 id="keyTitle">Save your recovery key</h2>
+      <p class="modal-sub" id="keySub"></p>
+      <form id="keyConfirm" hidden novalidate>
+        <label class="field">
+          <span>Your password</span>
+          <input id="keyPass" type="password" autocomplete="current-password" placeholder="Confirm it's you" />
+        </label>
+        <div class="auth-error" id="keyError" role="alert" hidden></div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="keyCancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="keyCreate">Create recovery key</button>
+        </div>
+      </form>
+      <div id="keyShow" hidden>
+        <code class="key-code" id="keyCode"></code>
+        <div class="key-actions">
+          <button type="button" class="btn btn-ghost" id="keyCopy">Copy</button>
+          <button type="button" class="btn btn-ghost" id="keyDownload">Download .txt</button>
+        </div>
+        <label class="key-check"><input type="checkbox" id="keySaved" /> I've saved it somewhere safe</label>
+        <button type="button" class="btn btn-primary key-done" id="keyDone" disabled>Done</button>
+      </div>
+    </div>
+  </div>
+  <script src="/pdf-reader.js"></script>
+  <script src="/court.js"></script>
+  <script src="/globe.js"></script>
+  <script src="/js/core.js"></script>
+  <script src="/js/library.js"></script>
+  <script src="/js/upload.js"></script>
+  <script src="/js/chat.js"></script>
+  <script src="/js/views.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/account.js"></script>
+  <script src="/js/atlas.js"></script>
+  <script src="/js/boot.js"></script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+Jane Doe
+Software Engineer | jane.doe@email.com | (555) 123-4567 | linkedin.com/in/janedoe
+
+SUMMARY
+Software engineer with five years of experience building web applications in TypeScript and Python. Passionate about clean code, mentoring, and shipping reliable products.
+
+EXPERIENCE
+Senior Software Engineer, Acme Corp — 2022 to present
+- Led migration of the billing system to a new microservice, reducing latency by 40%.
+- Mentored four junior engineers and ran weekly code reviews.
+Software Engineer, Widget Inc — 2019 to 2022
+- Built customer dashboards used by 20,000 users daily.
+
+EDUCATION
+B.S. Computer Science, State College, 2019
+
+SKILLS
+TypeScript, React, Node.js, Python, PostgreSQL, AWS, Docker
